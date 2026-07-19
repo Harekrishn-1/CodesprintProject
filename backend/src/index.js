@@ -9,6 +9,7 @@ const problemRouter = require("./routes/problemCreator");
 const submitRouter = require("./routes/submit")
 const aiRouter = require("./routes/aiChatting")
 const videoRouter = require("./routes/videoCreator");
+const contestRouter = require("./routes/contestCreator");
 const cors = require('cors')
 
 // console.log("Hello")
@@ -25,7 +26,8 @@ app.use('/user',authRouter);
 app.use('/problem',problemRouter);
 app.use('/submission',submitRouter);
 app.use('/ai',aiRouter);
-app.use("/video",videoRouter);
+app.use("/video", videoRouter);
+app.use('/contest', contestRouter);
 
 const dns = require('dns');
 dns.setServers(['8.8.8.8', '1.1.1.1']);

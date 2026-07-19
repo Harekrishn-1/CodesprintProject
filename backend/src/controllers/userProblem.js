@@ -3,6 +3,7 @@ const Problem = require("../models/problem");
 const User = require("../models/user");
 const Submission = require("../models/submission");
 const SolutionVideo = require("../models/solutionVideo")
+const { updateProfile, generateImageUploadSignature, saveProfileImage } = require('../controllers/userProfile');
 
 const createProblem = async (req,res)=>{
    
@@ -234,6 +235,21 @@ const solvedAllProblembyUser =  async(req,res)=>{
     }
 }
 
+// Admin ke liye poora problem (hidden test cases samet) — update form me bharne ke liye
+const getProblemForAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).send("ID is Missing");
+
+    const problem = await Problem.findById(id);
+    if (!problem) return res.status(404).send("Problem is Missing");
+
+    res.status(200).send(problem);
+  } catch (err) {
+    res.status(500).send("Error: " + err);
+  }
+};
+
 const submittedProblem = async(req,res)=>{
 
   try{
@@ -256,6 +272,5 @@ const submittedProblem = async(req,res)=>{
 
 
 
-module.exports = {createProblem,updateProblem,deleteProblem,getProblemById,getAllProblem,solvedAllProblembyUser,submittedProblem};
-
+module.exports = {createProblem,updateProblem,deleteProblem,getProblemById,getAllProblem,solvedAllProblembyUser,submittedProblem,getProblemForAdmin};
 

@@ -56,7 +56,8 @@ function Homepage() {
       {/* Navigation Bar */}
       <nav className="navbar bg-base-100 shadow-lg px-4">
         <div className="flex-1">
-          <NavLink to="/" className="btn btn-ghost text-xl">LeetCode</NavLink>
+          <NavLink to="/" className="btn btn-ghost text-xl">CodeSprint</NavLink>
+          <NavLink to="/contest" className="btn btn-primary btn-sm">Revision Contest</NavLink>
         </div>
         <div className="flex-none gap-4">
           <div className="dropdown dropdown-end">

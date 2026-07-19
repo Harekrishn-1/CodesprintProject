@@ -31,6 +31,14 @@ const userSchema = new Schema({
         enum:['user','admin'],
         default: 'user'
     },
+    profileImageUrl: {
+      type: String,
+      default: null
+    },
+    profileImagePublicId: {
+      type: String,
+      default: null
+    },
     problemSolved:{
         type:[{
             type:Schema.Types.ObjectId,

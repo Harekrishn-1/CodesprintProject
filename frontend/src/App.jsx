@@ -11,6 +11,10 @@ import Admin from "./pages/Admin";
 import AdminVideo from "./components/AdminVideo"
 import AdminDelete from "./components/AdminDelete"
 import AdminUpload from "./components/AdminUpload"
+import ContestPage from "./pages/ContestPage";
+import Dashboard from "./pages/Dashboard";
+import Profile from "./pages/Profile";
+import AdminUpdate from "./components/AdminUpdate";
 
 function App(){
   
@@ -31,15 +35,18 @@ function App(){
   return(
   <>
     <Routes>
-      <Route path="/" element={isAuthenticated ?<Homepage></Homepage>:<Navigate to="/signup" />}></Route>
-      <Route path="/login" element={isAuthenticated?<Navigate to="/" />:<Login></Login>}></Route>
+      <Route path="/" element={isAuthenticated ? <Dashboard /> : <Navigate to="/signup" />}></Route>
+      <Route path="/problems" element={isAuthenticated ? <Homepage /> : <Navigate to="/signup" />}></Route>
+      <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/signup" />}></Route>
+      <Route path="/admin/update" element={isAuthenticated && user?.role === 'admin' ? <AdminUpdate /> : <Navigate to="/" />} />      <Route path="/login" element={isAuthenticated?<Navigate to="/" />:<Login></Login>}></Route>
       <Route path="/signup" element={isAuthenticated?<Navigate to="/" />:<Signup></Signup>}></Route>
       <Route path="/admin" element={isAuthenticated && user?.role === 'admin' ? <Admin /> : <Navigate to="/" />} />
       <Route path="/admin/create" element={isAuthenticated && user?.role === 'admin' ? <AdminPanel /> : <Navigate to="/" />} />
       <Route path="/admin/delete" element={isAuthenticated && user?.role === 'admin' ? <AdminDelete /> : <Navigate to="/" />} />
       <Route path="/admin/video" element={isAuthenticated && user?.role === 'admin' ? <AdminVideo /> : <Navigate to="/" />} />
       <Route path="/admin/upload/:problemId" element={isAuthenticated && user?.role === 'admin' ? <AdminUpload /> : <Navigate to="/" />} />
-      <Route path="/problem/:problemId" element={<ProblemPage/>}></Route>
+        <Route path="/problem/:problemId" element={<ProblemPage />}></Route>
+        <Route path="/contest" element={isAuthenticated ? <ContestPage /> : <Navigate to="/signup" />}></Route>
       
     </Routes>
   </>

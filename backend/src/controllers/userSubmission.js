@@ -2,6 +2,7 @@ const Problem = require("../models/problem");
 const Submission = require("../models/submission");
 const User = require("../models/user");
 const {getLanguageById,submitBatch,submitToken} = require("../utils/problemUtility");
+const { updateContestOnSubmission } = require("./userContest");
 
 const submitCode = async (req,res)=>{
    
@@ -88,7 +89,10 @@ const submitCode = async (req,res)=>{
     submittedResult.runtime = runtime;
     submittedResult.memory = memory;
 
-    await submittedResult.save();
+      await submittedResult.save();
+      
+      // Contest hook — agar ye problem kisi ongoing contest ka hissa hai to score update
+    await updateContestOnSubmission(userId, problemId, status === 'accepted');
     
     // ProblemId ko insert karenge userSchema ke problemSolved mein if it is not persent there.
     
