@@ -3,6 +3,7 @@ import { NavLink } from 'react-router';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import axiosClient from '../utils/axiosClient';
+import UserAvatar from '../components/UserAvatar';
 
 const badge = { easy: 'badge-success', medium: 'badge-warning', hard: 'badge-error' };
 
@@ -96,6 +97,7 @@ function Profile() {
           <NavLink to="/" className="btn btn-ghost text-xl">CodeSprint</NavLink>
         </div>
         <NavLink to="/" className="btn btn-ghost btn-sm">Home</NavLink>
+        <UserAvatar />
       </div>
 
       <div className="container mx-auto p-4 max-w-3xl">

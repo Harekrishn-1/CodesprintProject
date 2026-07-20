@@ -3,6 +3,7 @@ import { NavLink } from 'react-router'; // Fixed import
 import { useDispatch, useSelector } from 'react-redux';
 import axiosClient from '../utils/axiosClient';
 import { logoutUser } from '../authSlice';
+import UserAvatar from '../components/UserAvatar';
 
 function Homepage() {
   const dispatch = useDispatch();
@@ -61,9 +62,9 @@ function Homepage() {
         </div>
         <div className="flex-none gap-4">
           <div className="dropdown dropdown-end">
-            <div tabIndex={0} className="btn btn-ghost">
-              {user?.firstName}
-            </div>
+           <div tabIndex={0} className="cursor-pointer">
+          <UserAvatar />
+        </div>
             <ul className="mt-3 p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52">
               <li><button onClick={handleLogout}>Logout</button></li>
               {user.role=='admin'&&<li><NavLink to="/admin">Admin</NavLink></li>}

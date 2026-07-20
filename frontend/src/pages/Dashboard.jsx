@@ -3,6 +3,7 @@ import { NavLink } from 'react-router';
 import { useSelector, useDispatch } from 'react-redux';
 import { logoutUser } from '../authSlice';
 import axiosClient from '../utils/axiosClient';
+import UserAvatar from '../components/UserAvatar';
 
 function Dashboard() {
   const { user } = useSelector((state) => state.auth);
@@ -10,36 +11,25 @@ function Dashboard() {
   const [totalProblems, setTotalProblems] = useState(0);
   const [solved, setSolved] = useState([]);
   const [history, setHistory] = useState([]);
+ 
 
-  useEffect(() => {
-    axiosClient.get('/problem/getAllProblem')
-      .then(({ data }) => setTotalProblems(data.length))
-      .catch(() => {});
-    axiosClient.get('/problem/problemSolvedByUser')
-      .then(({ data }) => setSolved(data))
-      .catch(() => {});
-    axiosClient.get('/contest/history')
-      .then(({ data }) => setHistory(data))
-      .catch(() => {});
-  }, []);
 
   const count = (d) => solved.filter((p) => p.difficulty === d).length;
 
   return (
     <div className="min-h-screen bg-base-200">
       {/* Navbar */}
-      <div className="navbar bg-base-100 shadow-lg px-4">
+     <div className="navbar bg-base-100 shadow-lg px-4">
         <div className="flex-1">
           <span className="btn btn-ghost text-xl">CodeSprint</span>
         </div>
         <div className="flex-none flex items-center gap-2">
           <NavLink to="/problems" className="btn btn-ghost btn-sm">Problems</NavLink>
           <NavLink to="/contest" className="btn btn-ghost btn-sm">Contest</NavLink>
-          <NavLink to="/profile" className="btn btn-ghost btn-sm">Profile</NavLink>
           {user?.role === 'admin' && (
             <NavLink to="/admin" className="btn btn-ghost btn-sm">Admin</NavLink>
           )}
-          <button className="btn btn-outline btn-sm" onClick={() => dispatch(logoutUser())}>Logout</button>
+          <UserAvatar />
         </div>
       </div>
 

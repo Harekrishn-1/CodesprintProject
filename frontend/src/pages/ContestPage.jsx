@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { NavLink } from 'react-router';
 import axiosClient from '../utils/axiosClient';
+import UserAvatar from '../components/UserAvatar';
 
 // seconds → "mm:ss"
 const fmt = (sec) => {
@@ -153,6 +154,7 @@ function ContestPage() {
             </span>
           </div>
         )}
+        <UserAvatar />
       </div>
 
       <div className="container mx-auto p-4 max-w-3xl">
@@ -189,6 +191,7 @@ function ContestPage() {
                     </button>
                   ))}
                 </div>
+                
               ) : (
                 <div className="w-full max-w-2xl">
                   {/* auto vs manual */}
@@ -198,7 +201,7 @@ function ContestPage() {
                     <a className={`tab ${pickMode === 'manual' ? 'tab-active' : ''}`}
                        onClick={() => setPickMode('manual')}>Choose problems</a>
                   </div>
-
+              
                   {/* duration */}
                   <div className="flex items-center gap-2 justify-center mb-4">
                     <span className="text-sm">Duration</span>
