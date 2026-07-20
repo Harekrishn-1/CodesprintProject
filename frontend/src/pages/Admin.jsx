@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Home, RefreshCw, Zap,Video } from 'lucide-react';
+import { Plus, Edit, Trash2, Home, RefreshCw, Zap,Video, Layers } from 'lucide-react';
 import { NavLink } from 'react-router';
 
 function Admin() {
@@ -41,6 +41,15 @@ function Admin() {
       color: 'btn-success',
       bgColor: 'bg-success/10',
       route: '/admin/video'
+    },
+    {
+      id: 'bulk',
+      title: 'Bulk Create',
+      description: 'Create multiple problems at once by pasting JSON',
+      icon: Layers,
+      color: 'btn-primary',
+      bgColor: 'bg-primary/10',
+      route: '/admin/bulk'
     }
   ];
 

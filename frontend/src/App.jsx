@@ -15,6 +15,7 @@ import ContestPage from "./pages/ContestPage";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import AdminUpdate from "./components/AdminUpdate";
+import AdminBulkCreate from "./components/AdminBulkCreate";
 
 function App(){
   
@@ -38,7 +39,9 @@ function App(){
       <Route path="/" element={isAuthenticated ? <Dashboard /> : <Navigate to="/signup" />}></Route>
       <Route path="/problems" element={isAuthenticated ? <Homepage /> : <Navigate to="/signup" />}></Route>
       <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/signup" />}></Route>
-      <Route path="/admin/update" element={isAuthenticated && user?.role === 'admin' ? <AdminUpdate /> : <Navigate to="/" />} />      <Route path="/login" element={isAuthenticated?<Navigate to="/" />:<Login></Login>}></Route>
+        <Route path="/admin/update" element={isAuthenticated && user?.role === 'admin' ? <AdminUpdate /> : <Navigate to="/" />} />
+        <Route path="/admin/bulk" element={isAuthenticated && user?.role === 'admin' ? <AdminBulkCreate /> : <Navigate to="/" />} />
+        <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login></Login>}></Route>
       <Route path="/signup" element={isAuthenticated?<Navigate to="/" />:<Signup></Signup>}></Route>
       <Route path="/admin" element={isAuthenticated && user?.role === 'admin' ? <Admin /> : <Navigate to="/" />} />
       <Route path="/admin/create" element={isAuthenticated && user?.role === 'admin' ? <AdminPanel /> : <Navigate to="/" />} />
