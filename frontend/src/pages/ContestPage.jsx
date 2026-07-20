@@ -22,8 +22,25 @@ function ContestPage() {
   const [remainingSec, setRemainingSec] = useState(null);
   const [results, setResults] = useState(null);
   const [starting, setStarting] = useState(false);
+  const [mode, setMode] = useState('revision');
+  const [pickMode, setPickMode] = useState('auto');      // auto | manual
+  const [customMin, setCustomMin] = useState(30);
+  const [unsolved, setUnsolved] = useState([]);
+  const [chosen, setChosen] = useState([]);
   const finishingRef = useRef(false);
 
+ // Unsolved problems lao — jab manual picker khule:
+  useEffect(() => {
+    if (mode === 'practice' && pickMode === 'manual' && unsolved.length === 0) {
+      axiosClient.get('/contest/unsolved')
+        .then(({ data }) => setUnsolved(data))
+        .catch(() => {});
+    }
+  }, [mode, pickMode]);
+
+  const toggleProblem = (id) => {
+    setChosen((c) => c.includes(id) ? c.filter(x => x !== id) : [...c, id]);
+  };
   // ongoing contest lao (page khulte hi)
   const fetchCurrent = async () => {
     try {
@@ -83,13 +100,15 @@ function ContestPage() {
     return () => clearInterval(t);
   }, [view]);
 
-  const startContest = async (durationMin) => {
+  const startContest = async (durationMin, problemIds = null) => {
     try {
       setStarting(true);
-      await axiosClient.post('/contest/start', { durationMin });
+      const body = { durationMin, mode };
+      if (problemIds && problemIds.length) body.problemIds = problemIds;
+      await axiosClient.post('/contest/start', body);
       await fetchCurrent();
     } catch (err) {
-      alert(err.response?.data?.message || 'Contest start nahi ho paya');
+      alert(err.response?.data?.message || 'Could not start contest');
     } finally {
       setStarting(false);
     }
@@ -142,27 +161,82 @@ function ContestPage() {
         {view === 'start' && (
           <div className="card bg-base-100 shadow-xl mt-10">
             <div className="card-body items-center text-center">
-              <h1 className="card-title text-3xl mb-2">Revision Contest</h1>
-              <p className="text-base-content/70 mb-1">
-                A timed contest from problems you've already solved. Older solves come first, mixed across topics and difficulty.
-              </p>
-              <p className="text-base-content/50 text-sm mb-6">
-                Practice a mixed set of problems with varying tags and difficulty levels. Solve them within the given time!
-              </p>
-              <div className="flex gap-4 flex-wrap justify-center">
-                {[{ min: 30, label: '30 min • 3 problems' },
-                  { min: 60, label: '60 min • 5 problems' },
-                  { min: 90, label: '90 min • 6 problems' }].map((opt) => (
-                  <button
-                    key={opt.min}
-                    className="btn btn-primary btn-lg"
-                    disabled={starting}
-                    onClick={() => startContest(opt.min)}
-                  >
-                    {starting ? <span className="loading loading-spinner"></span> : opt.label}
-                  </button>
-                ))}
+              {/* <h1 className="card-title text-3xl mb-2">Revision Contest</h1> */}
+              <h1 className="card-title text-3xl mb-4">
+                {mode === 'revision' ? 'Revision Contest' : 'Practice Contest'}
+              </h1>
+
+              <div className="tabs tabs-boxed mb-4">
+                <a className={`tab ${mode === 'revision' ? 'tab-active' : ''}`}
+                   onClick={() => setMode('revision')}>Revision</a>
+                <a className={`tab ${mode === 'practice' ? 'tab-active' : ''}`}
+                   onClick={() => setMode('practice')}>Practice</a>
               </div>
+
+              <p className="text-base-content/70 mb-6">
+                {mode === 'revision'
+                  ? 'A timed contest from problems you have already solved. Older solves come first, mixed across topics and difficulty.'
+                  : 'A timed contest from problems you have not solved yet. Practice solving under time pressure, like a real contest.'}
+              </p>
+              {mode === 'revision' ? (
+                <div className="flex gap-4 flex-wrap justify-center">
+                  {[{ min: 30, label: '30 min • 3 problems' },
+                    { min: 60, label: '60 min • 5 problems' },
+                    { min: 90, label: '90 min • 6 problems' }].map((opt) => (
+                    <button key={opt.min} className="btn btn-primary btn-lg" disabled={starting}
+                      onClick={() => startContest(opt.min)}>
+                      {starting ? <span className="loading loading-spinner"></span> : opt.label}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="w-full max-w-2xl">
+                  {/* auto vs manual */}
+                  <div className="tabs tabs-boxed justify-center mb-4">
+                    <a className={`tab ${pickMode === 'auto' ? 'tab-active' : ''}`}
+                       onClick={() => setPickMode('auto')}>Auto pick</a>
+                    <a className={`tab ${pickMode === 'manual' ? 'tab-active' : ''}`}
+                       onClick={() => setPickMode('manual')}>Choose problems</a>
+                  </div>
+
+                  {/* duration */}
+                  <div className="flex items-center gap-2 justify-center mb-4">
+                    <span className="text-sm">Duration</span>
+                    <input type="number" min="5" max="180"
+                      className="input input-bordered input-sm w-24"
+                      value={customMin}
+                      onChange={(e) => setCustomMin(e.target.value)} />
+                    <span className="text-sm">minutes</span>
+                  </div>
+
+                  {/* problem picker */}
+                  {pickMode === 'manual' && (
+                    <div className="border border-base-300 rounded-lg p-3 mb-4 max-h-72 overflow-y-auto text-left">
+                      {unsolved.length === 0 ? (
+                        <p className="text-base-content/50 text-sm">No unsolved problems available.</p>
+                      ) : unsolved.map((p) => (
+                        <label key={p._id} className="flex items-center gap-3 py-2 border-b border-base-200 cursor-pointer">
+                          <input type="checkbox" className="checkbox checkbox-sm"
+                            checked={chosen.includes(p._id)}
+                            onChange={() => toggleProblem(p._id)} />
+                          <span className="flex-1">{p.title}</span>
+                          <span className={`badge badge-sm ${difficultyBadge[p.difficulty] || ''}`}>{p.difficulty}</span>
+                          <span className="badge badge-sm badge-ghost">{p.tags}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+
+                  <button className="btn btn-primary btn-lg w-full"
+                    disabled={starting || (pickMode === 'manual' && chosen.length === 0)}
+                    onClick={() => startContest(Number(customMin), pickMode === 'manual' ? chosen : null)}>
+                    {starting ? <span className="loading loading-spinner"></span>
+                      : pickMode === 'manual'
+                        ? `Start with ${chosen.length} problem${chosen.length === 1 ? '' : 's'}`
+                        : 'Start Practice Contest'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

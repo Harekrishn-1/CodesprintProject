@@ -18,7 +18,7 @@ const contestSchema = new Schema({
       // is problem ko user ne PEHLI baar kab solve kiya tha (comparison ke liye)
       firstSolvedAt: {
         type: Date,
-        required: true
+        default: null
       },
       // contest ke andar ka result
       solved: {
@@ -42,10 +42,13 @@ const contestSchema = new Schema({
 
   durationMin: {
     type: Number,
-    enum: [30, 60, 90],
     required: true
   },
-
+  mode: {
+    type: String,
+    enum: ['revision', 'practice'],
+    default: 'revision'
+  },
   startTime: {
     type: Date,
     default: Date.now

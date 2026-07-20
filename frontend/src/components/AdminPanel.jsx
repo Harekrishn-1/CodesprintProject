@@ -9,7 +9,7 @@ const problemSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   difficulty: z.enum(['easy', 'medium', 'hard']),
-  tags: z.enum(['array', 'linkedList', 'graph', 'dp']),
+  tags: z.enum(['array', 'linkedList', 'graph', 'dp', 'string', 'stack', 'binarySearch', 'tree', 'math', 'greedy']),
   visibleTestCases: z.array(
     z.object({
       input: z.string().min(1, 'Input is required'),
@@ -150,6 +150,12 @@ function AdminPanel() {
                   <option value="linkedList">Linked List</option>
                   <option value="graph">Graph</option>
                   <option value="dp">DP</option>
+                  <option value="string">String</option>
+                    <option value="stack">Stack</option>
+                    <option value="binarySearch">Binary Search</option>
+                    <option value="tree">Tree</option>
+                    <option value="math">Math</option>
+                    <option value="greedy">Greedy</option>
                 </select>
               </div>
             </div>

@@ -1,5 +1,6 @@
 const Contest = require('../models/contest');
 const Submission = require('../models/submission');
+const Problem = require('../models/problem');
 
 // Duration ke hisaab se kitni problems aur kaunsa difficulty mix
 const CONTEST_PLAN = {
@@ -93,6 +94,30 @@ const selectRevisionProblems = async (userId, plan) => {
   return selected;
 };
 
+// PRACTICE MODE: unsolved problems, random mix (asli contest jaisa feel)
+const selectPracticeProblems = async (userId, plan) => {
+  // user ne jo solve kar li hain wo nikal do
+  const solvedIds = await Submission.distinct('problemId', { userId, status: 'accepted' });
+
+  const pickByDifficulty = async (difficulty, count) => {
+    if (count <= 0) return [];
+    return await Problem.aggregate([
+      { $match: { _id: { $nin: solvedIds }, difficulty } },
+      { $sample: { size: count } },          // random selection
+      { $project: { problemId: '$_id', difficulty: 1, tag: '$tags' } }
+    ]);
+  };
+
+  const selected = [
+    ...(await pickByDifficulty('easy', plan.easy)),
+    ...(await pickByDifficulty('medium', plan.medium)),
+    ...(await pickByDifficulty('hard', plan.hard))
+  ];
+
+  // practice me firstSolvedAt hota hi nahi — abhi tak solve nahi ki
+  return selected.map(p => ({ ...p, firstSolvedAt: null }));
+};
+
 // Contest ka time khatam ho gaya? (server time se — refresh/band-khol se timer nahi tootta)
 const isTimeOver = (contest) => {
   const endTime = contest.startTime.getTime() + contest.durationMin * 60 * 1000;
@@ -105,19 +130,24 @@ const remainingSeconds = (contest) => {
 };
 
 // POST /contest/start   body: { durationMin: 30 | 60 | 90 }
+// POST /contest/start   body: { durationMin, mode, problemIds? }
 const startContest = async (req, res) => {
   try {
     const userId = req.result._id;
-
+    const mode = req.body.mode === 'practice' ? 'practice' : 'revision';
     const durationMin = Number(req.body.durationMin);
-    if (!CONTEST_PLAN[durationMin]) {
-      return res.status(400).json({ message: 'durationMin 30, 60 ya 90 hona chahiye' });
+    const problemIds = Array.isArray(req.body.problemIds) ? req.body.problemIds : null;
+
+    // Revision: fixed slots. Practice: koi bhi duration 5-180 min
+    if (mode === 'revision' && !CONTEST_PLAN[durationMin]) {
+      return res.status(400).json({ message: 'Duration must be 30, 60 or 90 minutes' });
+    }
+    if (mode === 'practice' && (!durationMin || durationMin < 5 || durationMin > 180)) {
+      return res.status(400).json({ message: 'Duration must be between 5 and 180 minutes' });
     }
 
-    // pehle se ongoing contest hai?
     const existing = await Contest.findOne({ userId, status: 'ongoing' });
     if (existing) {
-      // time nikal chuka ho to auto-finish karke naya banne do
       if (isTimeOver(existing)) {
         existing.status = 'finished';
         await existing.save();
@@ -126,19 +156,38 @@ const startContest = async (req, res) => {
       }
     }
 
-    const plan = CONTEST_PLAN[durationMin];
-    const selected = await selectRevisionProblems(userId, plan);
+    let selected;
 
-    const minRequired = 3;
-    if (selected.length < minRequired) {
+    if (mode === 'practice' && problemIds && problemIds.length > 0) {
+      // User ne khud problems chuni hain
+      if (problemIds.length > 10) {
+        return res.status(400).json({ message: 'Please select at most 10 problems' });
+      }
+      const problems = await Problem.find({ _id: { $in: problemIds } }).select('_id');
+      selected = problems.map((p) => ({ problemId: p._id, firstSolvedAt: null }));
+    } else {
+      // Auto pick
+      const plan = CONTEST_PLAN[durationMin] || { easy: 2, medium: 2, hard: 1 };
+      selected = mode === 'practice'
+        ? await selectPracticeProblems(userId, plan)
+        : await selectRevisionProblems(userId, plan);
+    }
+
+    if (selected.length < 1) {
       return res.status(400).json({
-        message: `Revision contest ke liye kam se kam ${minRequired} solved problems chahiye. Pehle kuch problems solve karo!`
+        message: mode === 'practice'
+          ? 'No unsolved problems available. Add more problems or try revision mode.'
+          : 'You need at least 3 solved problems for a revision contest. Solve a few first!'
       });
+    }
+    if (mode === 'revision' && selected.length < 3) {
+      return res.status(400).json({ message: 'You need at least 3 solved problems for a revision contest.' });
     }
 
     const contest = await Contest.create({
       userId,
       durationMin,
+      mode,
       problems: selected.map((p) => ({
         problemId: p.problemId,
         firstSolvedAt: p.firstSolvedAt
@@ -148,7 +197,7 @@ const startContest = async (req, res) => {
     res.status(201).json({ message: 'Contest started', contest });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Contest start karne me error aaya' });
+    res.status(500).json({ message: 'Could not start contest' });
   }
 };
 
@@ -211,7 +260,9 @@ const finishContest = async (req, res) => {
       solveTimeSec: p.solveTimeSec,
       attempts: p.attempts,
       points: p.points,
-      daysSinceFirstSolved: Math.floor((Date.now() - p.firstSolvedAt.getTime()) / (1000 * 60 * 60 * 24))
+       daysSinceFirstSolved: p.firstSolvedAt
+        ? Math.floor((Date.now() - p.firstSolvedAt.getTime()) / (1000 * 60 * 60 * 24))
+        : null
     }));
 
     res.status(200).json({
@@ -248,6 +299,21 @@ const getContestHistory = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'History fetch me error' });
+  }
+};
+
+// GET /contest/unsolved → jo problems user ne solve nahi ki (practice picker ke liye)
+const getUnsolvedProblems = async (req, res) => {
+  try {
+    const userId = req.result._id;
+    const solvedIds = await Submission.distinct('problemId', { userId, status: 'accepted' });
+    const problems = await Problem.find({ _id: { $nin: solvedIds } })
+      .select('_id title difficulty tags')
+      .sort({ difficulty: 1 });
+    res.status(200).json(problems);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Could not fetch problems' });
   }
 };
 
@@ -297,5 +363,6 @@ module.exports = {
   finishContest,
   updateContestOnSubmission,
     selectRevisionProblems,
-  getContestHistory
+  getContestHistory,
+  getUnsolvedProblems
 };
